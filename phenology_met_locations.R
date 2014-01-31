@@ -15,7 +15,7 @@ if(!loaded){
 
 loaded <- require("Imap")
 if(!loaded){
-  print("trying to install plotrix")
+  print("trying to install Imap")
   install.packages("Imap")
   loaded <- require("Imap")
   if(loaded){
