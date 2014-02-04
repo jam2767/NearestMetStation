@@ -39,7 +39,7 @@ location <- data.frame(lat = dat$Latitude,lon = dat$Longitude)
 loc.unique <- unique(location)
 loc.unique <- na.omit(loc.unique)
 loc.index <- as.character(row.names(loc.unique))
-unique_loc_meta <- dat[loc.index,]                ## unique sites
+unique_phen_sites <- dat[loc.index,]                ## unique sites
 
 stations_gsod <- read.csv("ish-history.csv",na.strings = c("-99999","-999999"))
 stations_gsod <- na.omit(stations_gsod)
@@ -76,7 +76,31 @@ ghcn_data_to_bind = as.data.frame(cbind(rep("ghcn",nrow(stations_ghcn_trimmed)),
 colnames(ghcn_data_to_bind) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR","END.YR","ELEMENT")
 
 # Concatenating GSOD and GHCN data frames
- gsod_ghcn_data <- rbind(gsod_ghcn_data,ghcn_data_to_bind)
+gsod_ghcn_data <- rbind(gsod_ghcn_data,ghcn_data_to_bind)
+
+for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
+    phen_lat = unique_phen_sites$Latitude[ST]
+    phen_lon = unique_phen_sites$Longitude[ST]
+    
+    met_lat_numeric = (as.numeric(levels(gsod_ghcn_data$LAT))[gsod_ghcn_data$LAT])
+    met_lon_numeric = (as.numeric(levels(gsod_ghcn_data$LON))[gsod_ghcn_data$LON]) 
+    
+    nearby_data = subset(gsod_ghcn_data, (abs(met_lat_numeric - phen_lat) < 2) 
+                         & (abs(met_lon_numeric - phen_lon) < 2))
+    
+    distance_mat = rep(NA,nrow(nearby_data))
+    
+    for DIST in 1:nrow(nearby_data){
+      
+      lat_dist = nearby_data$LAT[DIST]
+      
+      
+      distance[ST,ISD] = gdist(lon.1=loni,lat.1=lati,
+                               lon.2=lon_ISD,lat.2=lat_ISD, units = "km")
+    }
+        
+    
+}
 
 
 # gsod_ghcn_data.location =  data.frame(lat =gsod_ghcn_data$LAT,lon = gsod_ghcn_data$LON)
@@ -88,7 +112,7 @@ colnames(ghcn_data_to_bind) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR"
 # GSOD/GHCN, LAT LON START END ORIG_ROW_NUM
 
 # Loop over stations -- everthing, man
-for(ST in 1:nrow(unique_loc_meta)){ # for 1:number of phenology sites
+for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   
   print(sprintf("Processing station %i of %i...",ST,length(loc.index)))
   BREAK = 0
@@ -104,8 +128,8 @@ for(ST in 1:nrow(unique_loc_meta)){ # for 1:number of phenology sites
     year.start.ISD = as.numeric(substr(stations_gsod$BEGIN[min.dist.index],1,4))
     year.end.ISD = as.numeric(substr(stations_gsod$END[min.dist.index],1,4))
     
-    year.start.pheno = as.numeric(unique_loc_meta$Year_Sampled_Start[ST])
-    year.end.pheno = as.numeric(unique_loc_meta$Year_Sampled_End[ST])
+    year.start.pheno = as.numeric(unique_phen_sites$Year_Sampled_Start[ST])
+    year.end.pheno = as.numeric(unique_phen_sites$Year_Sampled_End[ST])
     
     if(is.na(year.end.pheno)){
       if(year.end.ISD < year.start.pheno){
@@ -168,8 +192,8 @@ for(ST in 1:nrow(unique_loc_meta)){ # for 1:number of phenology sites
 
 # distance = matrix(0,length(loc.index),nrow(stations_gsod))
 # for(ST in 1:length(loc.index)){
-#   lati = unique_loc_meta$Latitude[ST]  
-#   loni = unique_loc_meta$Longitude[ST]   
+#   lati = unique_phen_sites$Latitude[ST]  
+#   loni = unique_phen_sites$Longitude[ST]   
 #   print(ST)
 #   for(ISD in 1:nrow(stations_gsod)){
 #     lat_ISD = stations_gsod$LAT[ISD]
@@ -202,8 +226,8 @@ for(ST in 1:length(loc.index)){
     year.start.ISD = as.numeric(substr(stations_gsod$BEGIN[min.dist.index],1,4))
     year.end.ISD = as.numeric(substr(stations_gsod$END[min.dist.index],1,4))
     
-    year.start.pheno = as.numeric(unique_loc_meta$Year_Sampled_Start[ST])
-    year.end.pheno = as.numeric(unique_loc_meta$Year_Sampled_End[ST])
+    year.start.pheno = as.numeric(unique_phen_sites$Year_Sampled_Start[ST])
+    year.end.pheno = as.numeric(unique_phen_sites$Year_Sampled_End[ST])
     
     if(is.na(year.end.pheno)){
       if(year.end.ISD < year.start.pheno){
