@@ -61,7 +61,10 @@ gsod_ghcn_data <- as.data.frame(cbind(rep("gsod",nrow(stations_gsod)),
 colnames(gsod_ghcn_data) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR","END.YR")
 
 # Add ghcn data to gsod_ghcn_data
-
+# First, add a bunch of NA's to the end of gsod_ghcn_data:
+a <- as.data.frame(matrix(NA,nrow=nrow(stations_ghcn_trimmed), 
+                          ncol=ncol(gsod_ghcn_data)),names=colnames(gsod_ghcn_data))
+gsod_ghcn_data <- rbind(gsod_ghcn_data, )
 
 
 
