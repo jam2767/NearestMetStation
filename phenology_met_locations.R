@@ -28,8 +28,8 @@ if(!loaded){
 }
 
 ## load point data file
-dat <- read.csv("data_file_011314_edit3_point.csv")
-#dat <- read.csv("data_file_011314_point.csv")
+#dat <- read.csv("data_file_011314_edit3_point.csv")
+dat <- read.csv("data_file_011314_point.csv")
 names <- colnames(dat)
 lat.unique <- unique(x=dat$Latitude)
 lon.unique <- unique(x=dat$Longitude)
@@ -57,35 +57,45 @@ gsod_ghcn_data <- as.data.frame(cbind(rep("gsod",nrow(stations_gsod)),
                                       as.numeric(stations_gsod$LAT), 
                                       as.numeric(stations_gsod$LON),
                                       as.numeric(substr(stations_gsod$BEGIN,1,4)),
-                                      as.numeric(substr(stations_gsod$END,1,4))))
-colnames(gsod_ghcn_data) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR","END.YR")
+                                      as.numeric(substr(stations_gsod$END,1,4)),
+                                      rep("NA",nrow(stations_gsod))))
+colnames(gsod_ghcn_data) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR","END.YR","ELEMENT")
 
 # Add ghcn data to gsod_ghcn_data
 # First, add a bunch of NA's to the end of gsod_ghcn_data:
-a <- as.data.frame(matrix(NA,nrow=nrow(stations_ghcn_trimmed), 
-                          ncol=ncol(gsod_ghcn_data)),names=colnames(gsod_ghcn_data))
-gsod_ghcn_data <- rbind(gsod_ghcn_data, )
+# a <- as.data.frame(matrix(NA,nrow=nrow(stations_ghcn_trimmed), 
+#                           ncol=ncol(gsod_ghcn_data)))
+# colnames(a) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR","END.YR")
+ghcn_data_to_bind = as.data.frame(cbind(rep("ghcn",nrow(stations_ghcn_trimmed)),
+                                        1:nrow(stations_ghcn_trimmed),
+                                        as.numeric(stations_ghcn_trimmed$LATITUDE), 
+                                        as.numeric(stations_ghcn_trimmed$LONGITUDE),
+                                        as.numeric(stations_ghcn_trimmed$FIRSTYEAR),
+                                        as.numeric(stations_ghcn_trimmed$LASTYEAR),
+                                        as.character(stations_ghcn_trimmed$ELEMENT)))
+colnames(ghcn_data_to_bind) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR","END.YR","ELEMENT")
+
+# Concatenating GSOD and GHCN data frames
+ gsod_ghcn_data <- rbind(gsod_ghcn_data,ghcn_data_to_bind)
 
 
+# gsod_ghcn_data.location =  data.frame(lat =gsod_ghcn_data$LAT,lon = gsod_ghcn_data$LON)
+# 
+# unique_gsod_ghcn_data <- unique(gsod_ghcn_data.location)
 
-
-
-
-
-
-
-
-
-as.numeric(substr(stations_gsod$BEGIN[min.dist.index],1,4))
-GSOD/GHCN, LAT LON START END ORIG_ROW_NUM
+# ????? 
+# as.numeric(substr(stations_gsod$BEGIN[min.dist.index],1,4))
+# GSOD/GHCN, LAT LON START END ORIG_ROW_NUM
 
 # Loop over stations -- everthing, man
-for(ST in 1:length(loc.index)){
+for(ST in 1:nrow(unique_loc_meta)){ # for 1:number of phenology sites
+  
   print(sprintf("Processing station %i of %i...",ST,length(loc.index)))
   BREAK = 0
   count = 1
+  
   while (BREAK == 0) {
-    
+
     sorted.distance = sort(distance[ST,],decreasing = FALSE, index.return = TRUE)
     
     min.dist.index = sorted.distance$ix[count]
@@ -153,7 +163,7 @@ for(ST in 1:length(loc.index)){
 
 
 
-############################################# Old stuff
+############################################# Old stuff below
 
 
 # distance = matrix(0,length(loc.index),nrow(stations_gsod))
