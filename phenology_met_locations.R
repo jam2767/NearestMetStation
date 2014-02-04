@@ -78,12 +78,24 @@ colnames(ghcn_data_to_bind) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR"
 # Concatenating GSOD and GHCN data frames
 gsod_ghcn_data <- rbind(gsod_ghcn_data,ghcn_data_to_bind)
 
+# Okay, for some reason, none of these are the right classes of data, so let's fix that:
+gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(orig.row.num))[orig.row.num],
+                            LAT = as.numeric(levels(LAT))[LAT],
+                            LON = as.numeric(levels(LON))[LON],
+                            BEGIN.YR = as.integer(levels(BEGIN.YR))[BEGIN.YR],
+                            END.YR = as.integer(levels(END.YR))[END.YR])
+
+# Er... this is weird... type in summary(gsod_ghcn_data) and you'll notice that
+# the minimum longitude is -802.33, and the minumum BEGIN.YR is 1763... suprising...
+
 for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
-    phen_lat = unique_phen_sites$Latitude[ST]
-    phen_lon = unique_phen_sites$Longitude[ST]
-    
-    met_lat_numeric = (as.numeric(levels(gsod_ghcn_data$LAT))[gsod_ghcn_data$LAT])
-    met_lon_numeric = (as.numeric(levels(gsod_ghcn_data$LON))[gsod_ghcn_data$LON]) 
+  # latitude and longitude of the phenology site:
+  phen_lat = unique_phen_sites$Latitude
+  phen_lon = unique_phen_sites$Longitude
+  
+  #
+  met_lat_numeric = (as.numeric(levels(gsod_ghcn_data$LAT))[gsod_ghcn_data$LAT])
+  met_lon_numeric = (as.numeric(levels(gsod_ghcn_data$LON))[gsod_ghcn_data$LON]) 
     
     nearby_data = subset(gsod_ghcn_data, (abs(met_lat_numeric - phen_lat) < 2) 
                          & (abs(met_lon_numeric - phen_lon) < 2))
