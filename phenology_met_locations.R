@@ -41,6 +41,12 @@ loc.unique <- na.omit(loc.unique)
 loc.index <- as.character(row.names(loc.unique))
 unique_phen_sites <- dat[loc.index,]                ## unique sites
 
+# The data in unique_phen_sites is all factor/categorical data. Convert at least lat/lon to numeric:
+unique_phen_sites <- transform(unique_phen_sites, 
+                               Latitude = as.numeric(levels(Latitude))[Latitude],
+                               Longitude = as.numeric(levels(Longitude))[Longitude])
+                               
+
 stations_gsod <- read.csv("ish-history.csv",na.strings = c("-99999","-999999"))
 stations_gsod <- na.omit(stations_gsod)
 stations_gsod$LAT<- stations_gsod$LAT/1000
@@ -62,10 +68,6 @@ gsod_ghcn_data <- as.data.frame(cbind(rep("gsod",nrow(stations_gsod)),
 colnames(gsod_ghcn_data) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR","END.YR","ELEMENT")
 
 # Add ghcn data to gsod_ghcn_data
-# First, add a bunch of NA's to the end of gsod_ghcn_data:
-# a <- as.data.frame(matrix(NA,nrow=nrow(stations_ghcn_trimmed), 
-#                           ncol=ncol(gsod_ghcn_data)))
-# colnames(a) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR","END.YR")
 ghcn_data_to_bind = as.data.frame(cbind(rep("ghcn",nrow(stations_ghcn_trimmed)),
                                         1:nrow(stations_ghcn_trimmed),
                                         as.numeric(stations_ghcn_trimmed$LATITUDE), 
@@ -86,21 +88,19 @@ gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(ori
                             END.YR = as.integer(levels(END.YR))[END.YR])
 
 # Er... this is weird... type in summary(gsod_ghcn_data) and you'll notice that
-# the minimum longitude is -802.33, and the minumum BEGIN.YR is 1763... suprising...
+# the minimum longitude is -802.33, and the minumum BEGIN.YR is 1763... suprising. Anyway...
 
 for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   # latitude and longitude of the phenology site:
-  phen_lat = unique_phen_sites$Latitude
-  phen_lon = unique_phen_sites$Longitude
+  phen_lat = unique_phen_sites$Latitude[ST]
+  phen_lon = unique_phen_sites$Longitude[ST]
+      
+  nearby_data = subset(gsod_ghcn_data, (abs(gsod_ghcn_data$LAT - phen_lat) < 2) 
+                       & (abs(gsod_ghcn_data$LON - phen_lon) < 2))
   
-  #
-  met_lat_numeric = (as.numeric(levels(gsod_ghcn_data$LAT))[gsod_ghcn_data$LAT])
-  met_lon_numeric = (as.numeric(levels(gsod_ghcn_data$LON))[gsod_ghcn_data$LON]) 
-    
-    nearby_data = subset(gsod_ghcn_data, (abs(met_lat_numeric - phen_lat) < 2) 
-                         & (abs(met_lon_numeric - phen_lon) < 2))
-    
-    distance_mat = rep(NA,nrow(nearby_data))
+  
+  
+  distance_mat = rep(NA,nrow(nearby_data))
     
     for DIST in 1:nrow(nearby_data){
       
