@@ -90,40 +90,78 @@ gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(ori
 # Er... this is weird... type in summary(gsod_ghcn_data) and you'll notice that
 # the minimum longitude is -802.33, and the minumum BEGIN.YR is 1763... suprising. Anyway...
 
+# Loop over stations -- everthing, man
 for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
+
+  print(sprintf("Processing station %i of %i...",ST,nrow(unique_phen_sites)))
+  
   # latitude and longitude of the phenology site:
-  phen_lat = unique_phen_sites$Latitude[ST]
-  phen_lon = unique_phen_sites$Longitude[ST]
+  phen_lat <- unique_phen_sites$Latitude[ST]
+  phen_lon <- unique_phen_sites$Longitude[ST]
       
-  nearby_data = subset(gsod_ghcn_data, (abs(gsod_ghcn_data$LAT - phen_lat) < 2) 
+  nearby_data <- subset(gsod_ghcn_data, (abs(gsod_ghcn_data$LAT - phen_lat) < 2) 
                        & (abs(gsod_ghcn_data$LON - phen_lon) < 2))
   
+  distance <- rep(NA,nrow(nearby_data))
   
-  
-  distance_mat = rep(NA,nrow(nearby_data))
+  # For each potential nearest met station...
+  for(MET_ST in 1:nrow(nearby_data)){
+    lat_MET_ST <- nearby_data$LAT[MET_ST]
+    lon_MET_ST <- nearby_data$LON[MET_ST]
     
-    for DIST in 1:nrow(nearby_data){
-      
-      lat_dist = nearby_data$LAT[DIST]
-      
-      
-      distance[ST,ISD] = gdist(lon.1=loni,lat.1=lati,
-                               lon.2=lon_ISD,lat.2=lat_ISD, units = "km")
+    # ...calculate the distances to the nearby met stations:
+    distance[MET_ST] <- gdist(lon.1=lon_MET_ST,lat.1=lat_MET_ST,
+                               lon.2=phen_lon,lat.2=phen_lat, units = "km")
+  }
+  
+  # Let's put them in order of increasing distance:
+  nearby_data <- cbind(nearby_data, distance)  
+  nearby_data <- na.omit(nearby_data)
+  nearby_data <- nearby_data[with(nearby_data,order(distance)),] # Closest is in row 1
+  
+  # Now find the closest one that has at least XX% data.
+  # We'll use a little while loop. Keep looping until either a station is found or we're out of stations.
+  required_data_completeness <- 0.7 # 70%
+  no_nearby_stns <- FALSE
+  BREAK <- FALSE
+  
+  # If there are no stations in nearby_data, then skip the loop entirely
+  if(nrow(nearby_data) == 0) {
+    BREAK <- TRUE
+    no_nearby_stns <- TRUE
+  }
+
+  while (~BREAK) {
+    
+    # Get the station id for the closest met station:
+    stn_id <- 
+    # Download the data for the closest met station (the station in row 1 of nearby_data)
+    download_met_data(nearby_data$dataset[1],stn_id)
+    
+    # If the station doesn't have enough data, remove it from nearby_data:
+    
+    
+    # Otherwise, exit the loop:
+    
+    
+    
+    # If there are no stations left in nearby_data, then exit the loop
+    if(nrow(nearby_data) == 0) {
+      BREAK <- TRUE
+      no_nearby_stns <- TRUE
     }
-        
+    
+    
+    
+  }
+  
+  
     
 }
 
 
-# gsod_ghcn_data.location =  data.frame(lat =gsod_ghcn_data$LAT,lon = gsod_ghcn_data$LON)
-# 
-# unique_gsod_ghcn_data <- unique(gsod_ghcn_data.location)
 
-# ????? 
-# as.numeric(substr(stations_gsod$BEGIN[min.dist.index],1,4))
-# GSOD/GHCN, LAT LON START END ORIG_ROW_NUM
 
-# Loop over stations -- everthing, man
 for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   
   print(sprintf("Processing station %i of %i...",ST,length(loc.index)))
