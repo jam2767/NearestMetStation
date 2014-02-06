@@ -65,7 +65,7 @@ Determine_Percent_Data_GHCN <- function(st.id,
                        widths,header=FALSE,col.names=columns)
   
   # Throw out everything but Tmax, Tmin, Precip
-  ghcn_data = subset(ghcn_data,ghcn_data$ELEMENT == "PRCP" | ghcn_data$ELEMENT == "TMAX" | ghcn_data$ELEMENT == "TMAX")
+  ghcn_data = subset(ghcn_data,ghcn_data$ELEMENT == "PRCP" | ghcn_data$ELEMENT == "TMAX" | ghcn_data$ELEMENT == "TMIN")
   
   # Throw out unnesccesary years
   ghcn_data = subset(ghcn_data, ghcn_data$YEAR >= year.start.pheno & ghcn_data$YEAR <= year.end.pheno )
@@ -76,12 +76,16 @@ Determine_Percent_Data_GHCN <- function(st.id,
                    "VAL10","VAL11","VAL12","VAL13","VAL14","VAL15","VAL16","VAL17",
                    "VAL18","VAL19","VAL20","VAL21","VAL22","VAL23","VAL24","VAL25",
                    "VAL26","VAL27","VAL28","VAL29","VAL30","VAL31")
+  
   ghcn_data =ghcn_data[,cols_to_keep] 
   
   # change -9999 to NA
   ghcn_data[ghcn_data==-9999] = NA
   
-  # 
+  # Create Dates
+  alldates=data.frame(fdate=seq(from=as.Date(paste(year.start.pheno,"-01-01",sep="")), 
+                                to=as.Date(paste(year.end.pheno,"-12-31",sep="")), by=1))
+  
   start_year=min(substr(files,nchar(files)-9,nchar(files)-6))
   end_year=max(substr(files,nchar(files)-9,nchar(files)-6))
   alldates=data.frame(fdate=seq(from=as.Date(paste(start_year,"-01-01",sep="")), 
