@@ -98,6 +98,7 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   # latitude and longitude of the phenology site:
   phen_lat <- unique_phen_sites$Latitude[ST]
   phen_lon <- unique_phen_sites$Longitude[ST]
+  
       
   nearby_data <- subset(gsod_ghcn_data, (abs(gsod_ghcn_data$LAT - phen_lat) < 2) 
                        & (abs(gsod_ghcn_data$LON - phen_lon) < 2))
@@ -106,6 +107,7 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   
   # For each potential nearest met station...
   for(MET_ST in 1:nrow(nearby_data)){
+    
     lat_MET_ST <- nearby_data$LAT[MET_ST]
     lon_MET_ST <- nearby_data$LON[MET_ST]
     
@@ -119,12 +121,23 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   nearby_data <- na.omit(nearby_data)
   nearby_data <- nearby_data[with(nearby_data,order(distance)),] # Closest is in row 1
   
+  # Find the met stations that have overlapping POR with the desired PHEN POR. 
+  phen_begin <- unique_phen_sites$Year_Sampled_Start[ST]
+  phen_end <- unique_phen_sites$Year_Sampled_End[ST]
+  
+  if (is.na(phen_end)){
+    phen_end = phen_begin
+  }
+
+  nearby_data = subset(nearby_data, nearby_data$BEGIN.YR <= phen_begin & 
+                         nearby_data$END.YR >= phen_end)
+  
   # Now find the closest one that has at least XX% data.
   # We'll use a little while loop. Keep looping until either a station is found or we're out of stations.
   required_data_completeness <- 0.7 # 70%
   no_nearby_stns <- FALSE
   BREAK <- FALSE
-  
+
   # If there are no stations in nearby_data, then skip the loop entirely
   if(nrow(nearby_data) == 0) {
     BREAK <- TRUE
@@ -133,8 +146,61 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
 
   while (~BREAK) {
     
-    # Get the station id for the closest met station:
-    stn_id <- 
+    # Figure out whether gsod or ghcn:
+    dataset <- as.character(nearby_data$dataset[1])
+
+    # Deal with gsod and ghcn data seperately
+    if(dataset=="gsod") {
+      # Get the WBAN and USAF ids for the closest met station:
+      WBAN_id <- stations_gsod$WBAN[nearby_data$orig.row.num[1]]
+      USAF_id <- stations_gsod$USAF[nearby_data$orig.row.num[1]]
+      
+      fraction_complete <- Determine_Percent_Data_GSOD(USAF_id,WBAN_id,
+                                                      phen_begin,
+                                                      phen_end,
+                                                      "point",
+                                                      required_data_completeness)
+      
+      if (fraction_complete >= required_data_completeness){
+        BREAK = TRUE
+      }else{
+        nearby_data <- nearby_data[-1,]
+      }
+    }else{ # GHCN
+      st_id <- as.character(stations_ghcn_trimmed$ID[nearby_data$orig.row.num[1]])
+      
+      ghcn_current_st <- subset(stations_ghcn_trimmed,stations_ghcn_trimmed$ID==st_id)
+      
+      
+      check_elements_mat <- matrix(data=0,nrow=nrow(ghcn_current_st),ncol=3)
+      
+      check_elements_mat[ghcn_current_st$ELEMENT=="PRCP",1] = 2
+      check_elements_mat[ghcn_current_st$ELEMENT=="TMAX",1] = 3
+      check_elements_mat[ghcn_current_st$ELEMENT=="TMIN",1] = 5
+      
+      check_elements_mat[ghcn_current_st$FIRSTYEAR <= phen_begin,2] = 1
+      check_elements_mat[ghcn_current_st$LASTYEAR >= phen_end,3] = 1
+      # Multiply the columns together:
+      prod_vec <- apply(check_elements_mat,1,prod)
+      # Remove the zeros (ie the records that don't overlap with the pheno site time span):
+      prod_vec[prod_vec==0] <- NA
+      product <- prod(prod_vec,na.rm=TRUE)      
+      # product should be a multiple of 30 if there is data for the appropriate time span for all variables
+      if(product%%30 == 0) {
+        # Download the data and check its completeness
+        
+        
+      }      
+
+      
+      fraction_complete <- Determine_Percent_Data_GSOD(st_id,
+                                                       phen_begin,
+                                                       phen_end,
+                                                       "point",
+                                                       required_data_completeness)
+    }
+      
+    
     # Download the data for the closest met station (the station in row 1 of nearby_data)
     download_met_data(nearby_data$dataset[1],stn_id)
     
