@@ -65,7 +65,7 @@ Determine_Percent_Data_GHCN <- function(st.id,
                        widths,header=FALSE,col.names=columns)
   
   # Throw out everything but Tmax, Tmin, Precip
-  ghcn_data = subset(ghcn_data,ghcn_data$ELEMENT == "PRCP" | ghcn_data$ELEMENT == "TMAX" | ghcn_data$ELEMENT == "TMAX")
+  ghcn_data = subset(ghcn_data,ghcn_data$ELEMENT == "PRCP" | ghcn_data$ELEMENT == "TMAX" | ghcn_data$ELEMENT == "TMIN")
   
   # Throw out unnesccesary years
   ghcn_data = subset(ghcn_data, ghcn_data$YEAR >= year.start.pheno & ghcn_data$YEAR <= year.end.pheno )
@@ -76,22 +76,47 @@ Determine_Percent_Data_GHCN <- function(st.id,
                    "VAL10","VAL11","VAL12","VAL13","VAL14","VAL15","VAL16","VAL17",
                    "VAL18","VAL19","VAL20","VAL21","VAL22","VAL23","VAL24","VAL25",
                    "VAL26","VAL27","VAL28","VAL29","VAL30","VAL31")
+  
   ghcn_data =ghcn_data[,cols_to_keep] 
   
   # change -9999 to NA
   ghcn_data[ghcn_data==-9999] = NA
   
-  # 
-  start_year=min(substr(files,nchar(files)-9,nchar(files)-6))
-  end_year=max(substr(files,nchar(files)-9,nchar(files)-6))
-  alldates=data.frame(fdate=seq(from=as.Date(paste(start_year,"-01-01",sep="")), 
-                                to=as.Date(paste(end_year,"-12-31",sep="")), by=1))
+  # Create Dates
+  formatted_data = data.frame(Date=seq(from=as.Date(paste(year.start.pheno,"-01-01",sep="")), 
+                               to=as.Date(paste(year.end.pheno,"-12-31",sep="")), by=1),
+                              tmax_C = NA, tmin_C = NA, ppt_mm = NA)
+
+  month_lengths <- c(31,28,31,30,31,30,31,31,30,31,30,31)
+  for (ROW in 1:nrow(ghcn_data)){
+
+    formatted_data_vec = as.vector(ghcn_data[ROW,5:34])
+    
+    # If February in leap year:
+    if( (ghcn_data$YEAR[ROW]%%4 == 0) & (ghcn_data$MONTH[ROW] == 2) ){ 
+      month_lengths[2] = 29
+      formatted_data_vec = formatted_data_vec[1:month_lengths[ghcn_data$MONTH[ROW]]]
+      month_lengths[2] = 28        
+    }else { # Not leap year February:
+      formatted_data_vec = formatted_data_vec[1:month_lengths[ghcn_data$MONTH[ROW]]]
+    }
+    
+    # Calculate the start index:
+    first_date = as.Date(paste(ghcn_data$YEAR[ROW],ghcn_data$MONTH[ROW],"01",sep="-"))
+    start_index = which(formatted_data$Date==first_date)
+    end_index = start_index + length(formatted_data_vec) - 1
+    
+    if (as.character(ghcn_data$ELEMENT[ROW]) == "PRCP"){ 
+      formatted_data$ppt_mm[start_index:end_index] = formatted_data_vec/10 # unit convertion from tenths of mm
+    }else if(as.character(ghcn_data$ELEMENT[ROW]) == "TMAX"){
+      formatted_data$tmax_C[start_index:end_index] = formatted_data_vec/10 # unit convertion from tenths of deg-C
+    }else{ #TMIN
+      formatted_data$tmin_C[start_index:end_index] = formatted_data_vec/10 # unit convertion from tenths of deg-C
+    }
+    
+  }
   
-  stn=matrix()
-  tmin=matrix()
-  tmax=matrix()
-  ppt=matrix()
-  fdate=matrix()
+
   
   for (tmpfile in files){
     #
