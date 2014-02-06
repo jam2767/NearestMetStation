@@ -122,15 +122,15 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   nearby_data <- nearby_data[with(nearby_data,order(distance)),] # Closest is in row 1
   
   # Find the met stations that have overlapping POR with the desired PHEN POR. 
-  phen_begin <- unique_phen_sites$Year_Sampled_Start[ST]
-  phen_end <- unique_phen_sites$Year_Sampled_End[ST]
+  phen_begin <- as.numeric(unique_phen_sites$Year_Sampled_Start[ST])
+  phen_end <- as.numeric(unique_phen_sites$Year_Sampled_End[ST])[unique_phen_sites$Year_Sampled_End[ST]]
   
   if (is.na(phen_end)){
     phen_end = phen_begin
   }
-
+  
   nearby_data = subset(nearby_data, nearby_data$BEGIN.YR <= phen_begin & 
-                         nearby_data$END.YR >= phen_end)
+                        (nearby_data$END.YR) >= phen_end)
   
   # Now find the closest one that has at least XX% data.
   # We'll use a little while loop. Keep looping until either a station is found or we're out of stations.
