@@ -2,12 +2,17 @@
 Determine_Percent_Data_GSOD <- function(isd.station.usaf,
                                         isd.station.wban,
                                         year.start.pheno,
-                                        year.end.pheno){
+                                        year.end.pheno,
+                                        data.type,
+                                        completeness.required){
   
   
   USAF = isd.station.usaf
-#   dir.create(paste("Met_Data/",USAF,sep=""))
-  dir.create(paste("Met_Data_Slope/",USAF,sep=""))
+  if (data.type =="point"){
+    dir.create(paste("Met_Data_Point/",USAF,sep=""))
+  }else{
+    dir.create(paste("Met_Data_Slope/",USAF,sep=""))
+  }
   
   
   WBAN = isd.station.wban
@@ -18,25 +23,30 @@ Determine_Percent_Data_GSOD <- function(isd.station.usaf,
   year_st = year.start.pheno
   year_end = year.end.pheno
   
-  if (is.na(year_end)){
-    year_list = year_st
-  }else{
-    year_list = year_st:year_end
-  }
+
+  year_list = year_st:year_end
   
   for (YEAR in year_list) {
     
     downloadURL = paste("ftp://ftp.ncdc.noaa.gov/pub/data/gsod/",YEAR,"/",sep = "")
     file_name = paste(USAF,"-",WBAN,"-",YEAR,".op.gz",sep ="")
-    try(download.file(paste(downloadURL,file_name,sep=""), 
-#                       paste("Met_Data/",USAF,"/",file_name,sep="")),silent=TRUE)
-                      paste("Met_Data_Slope/",USAF,"/",file_name,sep="")),silent=TRUE)
-
+    
+    if (data.type =="point"){
+      try(download.file(paste(downloadURL,file_name,sep=""), 
+                        paste("Met_Data_Point/",USAF,"/",file_name,sep="")),silent=TRUE)
+    }else{
+      try(download.file(paste(downloadURL,file_name,sep=""), 
+                        paste("Met_Data_Slope/",USAF,"/",file_name,sep="")),silent=TRUE)
+    } 
   }
   
   
-#   files=dir(paste("Met_Data","/",USAF,sep=""),"*.op.gz",full.names=T)
-  files=dir(paste("Met_Data_Slope","/",USAF,sep=""),"*.op.gz",full.names=T)
+  if (data.type =="point"){
+    files=dir(paste("Met_Data_Point","/",USAF,sep=""),"*.op.gz",full.names=T)
+  }else{
+    files=dir(paste("Met_Data_Slope","/",USAF,sep=""),"*.op.gz",full.names=T)
+  }
+  
   start_year=min(substr(files,nchar(files)-9,nchar(files)-6))
   end_year=max(substr(files,nchar(files)-9,nchar(files)-6))
   alldates=data.frame(fdate=seq(from=as.Date(paste(start_year,"-01-01",sep="")), 
@@ -71,14 +81,19 @@ Determine_Percent_Data_GSOD <- function(isd.station.usaf,
   forcing=na.omit(forcing)
   forcing=merge(alldates,forcing,all=TRUE)
   forcing$ppt_mm <- forcing$ppt*25.4
-  forcing$tmax_C <- round((forcing$tmax-32) * 5/9, digits=2)
-  forcing$tmin_C <- round((forcing$tmin-32) * 5/9, digits=2)
-  forcing$tavg_C <-round((forcing$tmin_C+forcing$tmax_C)/2, digits=2)
+  forcing$tmax_C <- round((forcing$tmax-32)*5/9, digits=2)
+  forcing$tmin_C <- round((forcing$tmin-32)*5/9, digits=2)
   forcing$ppt_mm[forcing$ppt_mm > 999]=0.0
   
   percent_data = nrow(na.omit(forcing))/nrow(forcing)
-#   write.csv(file = paste("Formatted_Met_Data/",USAF), forcing, row.names=FALSE)
-  write.csv(file = paste("Formatted_Met_Data_Slope/",USAF), forcing, row.names=FALSE)
+  
+  if (percent_data >= completeness.required){
+    if (data.type =="point"){
+      write.csv(file = paste("Formatted_Met_Data_Point/",USAF), forcing, row.names=FALSE)
+    }else{
+      write.csv(file = paste("Formatted_Met_Data_Slope/",USAF), forcing, row.names=FALSE)
+    }
+  }
   
   return(percent_data)
 }
