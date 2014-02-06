@@ -1,39 +1,25 @@
 # Determine Percent Data
-Determine_Percent_Data_GSOD <- function(isd.station.usaf,
-                                        isd.station.wban,
+Determine_Percent_Data_GHCN <- function(st.id,
                                         year.start.pheno,
                                         year.end.pheno,
                                         data.type,
                                         completeness.required){
   
-  
-  USAF = isd.station.usaf
-  if (data.type =="point"){
-    dir.create(paste("Met_Data_Point/",USAF,sep=""))
-  }else{
-    dir.create(paste("Met_Data_Slope/",USAF,sep=""))
-  }
-  
-  
-  WBAN = isd.station.wban
-  if (nchar(WBAN) == 4) {
-    WBAN = paste("0",WBAN,sep="")
-  }
+  dir.create(paste("Met_Data_Point/",st.id,sep=""))
   
   year_st = year.start.pheno
   year_end = year.end.pheno
   
-
   year_list = year_st:year_end
   
   for (YEAR in year_list) {
     
-    downloadURL = paste("ftp://ftp.ncdc.noaa.gov/pub/data/gsod/",YEAR,"/",sep = "")
-    file_name = paste(USAF,"-",WBAN,"-",YEAR,".op.gz",sep ="")
+    downloadURL = paste("ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/daily/all/",sep = "")
+    file_name = paste(st.id,".dly",sep ="")
     
     if (data.type =="point"){
       try(download.file(paste(downloadURL,file_name,sep=""), 
-                        paste("Met_Data_Point/",USAF,"/",file_name,sep="")),silent=TRUE)
+                        paste("Met_Data_Point/",st.id,"/",file_name,sep="")),silent=TRUE)
     }else{
       try(download.file(paste(downloadURL,file_name,sep=""), 
                         paste("Met_Data_Slope/",USAF,"/",file_name,sep="")),silent=TRUE)
@@ -98,5 +84,4 @@ Determine_Percent_Data_GSOD <- function(isd.station.usaf,
   return(percent_data)
 }
 
-  
-  
+

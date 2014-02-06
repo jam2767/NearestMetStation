@@ -37,6 +37,9 @@ met.variable.categories[stations_ghcn$ELEMENT=="PRCP"] = 5
 
 rows.to.be.removed <- c()
 counter = 0
+###########################################
+all.station.ids = all.station.ids[1:1000]
+###########################################
 for (stn.id in all.station.ids) {
   idx <- which(stations_ghcn$ID == stn.id)
   product <- prod(met.variable.categories[idx])
