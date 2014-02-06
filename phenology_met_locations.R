@@ -41,6 +41,12 @@ loc.unique <- na.omit(loc.unique)
 loc.index <- as.character(row.names(loc.unique))
 unique_phen_sites <- dat[loc.index,]                ## unique sites
 
+# The data in unique_phen_sites is all factor/categorical data. Convert at least lat/lon to numeric:
+unique_phen_sites <- transform(unique_phen_sites, 
+                               Latitude = as.numeric(levels(Latitude))[Latitude],
+                               Longitude = as.numeric(levels(Longitude))[Longitude])
+                               
+
 stations_gsod <- read.csv("ish-history.csv",na.strings = c("-99999","-999999"))
 stations_gsod <- na.omit(stations_gsod)
 stations_gsod$LAT<- stations_gsod$LAT/1000
@@ -62,10 +68,6 @@ gsod_ghcn_data <- as.data.frame(cbind(rep("gsod",nrow(stations_gsod)),
 colnames(gsod_ghcn_data) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR","END.YR","ELEMENT")
 
 # Add ghcn data to gsod_ghcn_data
-# First, add a bunch of NA's to the end of gsod_ghcn_data:
-# a <- as.data.frame(matrix(NA,nrow=nrow(stations_ghcn_trimmed), 
-#                           ncol=ncol(gsod_ghcn_data)))
-# colnames(a) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR","END.YR")
 ghcn_data_to_bind = as.data.frame(cbind(rep("ghcn",nrow(stations_ghcn_trimmed)),
                                         1:nrow(stations_ghcn_trimmed),
                                         as.numeric(stations_ghcn_trimmed$LATITUDE), 
@@ -78,40 +80,88 @@ colnames(ghcn_data_to_bind) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR"
 # Concatenating GSOD and GHCN data frames
 gsod_ghcn_data <- rbind(gsod_ghcn_data,ghcn_data_to_bind)
 
+# Okay, for some reason, none of these are the right classes of data, so let's fix that:
+gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(orig.row.num))[orig.row.num],
+                            LAT = as.numeric(levels(LAT))[LAT],
+                            LON = as.numeric(levels(LON))[LON],
+                            BEGIN.YR = as.integer(levels(BEGIN.YR))[BEGIN.YR],
+                            END.YR = as.integer(levels(END.YR))[END.YR])
+
+# Er... this is weird... type in summary(gsod_ghcn_data) and you'll notice that
+# the minimum longitude is -802.33, and the minumum BEGIN.YR is 1763... suprising. Anyway...
+
+# Loop over stations -- everthing, man
 for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
-    phen_lat = unique_phen_sites$Latitude[ST]
-    phen_lon = unique_phen_sites$Longitude[ST]
-    
-    met_lat_numeric = (as.numeric(levels(gsod_ghcn_data$LAT))[gsod_ghcn_data$LAT])
-    met_lon_numeric = (as.numeric(levels(gsod_ghcn_data$LON))[gsod_ghcn_data$LON]) 
-    
-    nearby_data = subset(gsod_ghcn_data, (abs(met_lat_numeric - phen_lat) < 2) 
-                         & (abs(met_lon_numeric - phen_lon) < 2))
-    
-    distance_mat = rep(NA,nrow(nearby_data))
-    
-    for DIST in 1:nrow(nearby_data){
+
+  print(sprintf("Processing station %i of %i...",ST,nrow(unique_phen_sites)))
+  
+  # latitude and longitude of the phenology site:
+  phen_lat <- unique_phen_sites$Latitude[ST]
+  phen_lon <- unique_phen_sites$Longitude[ST]
       
-      lat_dist = nearby_data$LAT[DIST]
-      
-      
-      distance[ST,ISD] = gdist(lon.1=loni,lat.1=lati,
-                               lon.2=lon_ISD,lat.2=lat_ISD, units = "km")
+  nearby_data <- subset(gsod_ghcn_data, (abs(gsod_ghcn_data$LAT - phen_lat) < 2) 
+                       & (abs(gsod_ghcn_data$LON - phen_lon) < 2))
+  
+  distance <- rep(NA,nrow(nearby_data))
+  
+  # For each potential nearest met station...
+  for(MET_ST in 1:nrow(nearby_data)){
+    lat_MET_ST <- nearby_data$LAT[MET_ST]
+    lon_MET_ST <- nearby_data$LON[MET_ST]
+    
+    # ...calculate the distances to the nearby met stations:
+    distance[MET_ST] <- gdist(lon.1=lon_MET_ST,lat.1=lat_MET_ST,
+                               lon.2=phen_lon,lat.2=phen_lat, units = "km")
+  }
+  
+  # Let's put them in order of increasing distance:
+  nearby_data <- cbind(nearby_data, distance)  
+  nearby_data <- na.omit(nearby_data)
+  nearby_data <- nearby_data[with(nearby_data,order(distance)),] # Closest is in row 1
+  
+  # Now find the closest one that has at least XX% data.
+  # We'll use a little while loop. Keep looping until either a station is found or we're out of stations.
+  required_data_completeness <- 0.7 # 70%
+  no_nearby_stns <- FALSE
+  BREAK <- FALSE
+  
+  # If there are no stations in nearby_data, then skip the loop entirely
+  if(nrow(nearby_data) == 0) {
+    BREAK <- TRUE
+    no_nearby_stns <- TRUE
+  }
+
+  while (~BREAK) {
+    
+    # Get the station id for the closest met station:
+    stn_id <- 
+    # Download the data for the closest met station (the station in row 1 of nearby_data)
+    download_met_data(nearby_data$dataset[1],stn_id)
+    
+    # If the station doesn't have enough data, remove it from nearby_data:
+    
+    
+    # Otherwise, exit the loop:
+    
+    
+    
+    # If there are no stations left in nearby_data, then exit the loop
+    if(nrow(nearby_data) == 0) {
+      BREAK <- TRUE
+      no_nearby_stns <- TRUE
     }
-        
+    
+    
+    
+  }
+  
+  
     
 }
 
 
-# gsod_ghcn_data.location =  data.frame(lat =gsod_ghcn_data$LAT,lon = gsod_ghcn_data$LON)
-# 
-# unique_gsod_ghcn_data <- unique(gsod_ghcn_data.location)
 
-# ????? 
-# as.numeric(substr(stations_gsod$BEGIN[min.dist.index],1,4))
-# GSOD/GHCN, LAT LON START END ORIG_ROW_NUM
 
-# Loop over stations -- everthing, man
 for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   
   print(sprintf("Processing station %i of %i...",ST,length(loc.index)))
