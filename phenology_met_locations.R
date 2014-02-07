@@ -95,8 +95,7 @@ gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(ori
 # the minimum longitude is -802.33, and the minumum BEGIN.YR is 1763... suprising. Anyway...
 
 # Loop over stations -- everthing, man
-# for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
-for(ST in 1){
+for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   print(sprintf("Processing pheno site %i of %i...",ST,nrow(unique_phen_sites)))
   
   # latitude and longitude of the phenology site:
@@ -113,8 +112,6 @@ for(ST in 1){
   
   # For each potential nearest met station...
   for(MET_ST in 1:nrow(nearby_data)){
-    
-    print(sprintf("Processing met station %i of %i...",MET_ST,nrow(nearby_data)))
     
     lat_MET_ST <- nearby_data$LAT[MET_ST]
     lon_MET_ST <- nearby_data$LON[MET_ST]
@@ -152,7 +149,12 @@ for(ST in 1){
     no_nearby_stns <- TRUE
   }
   
+  count = 1
+  
   while(!BREAK){
+    
+    print(sprintf("Trying %i of while loop",count))
+    count = count+1
     
     # Figure out whether gsod or ghcn:
     dataset <- as.character(nearby_data$dataset[1])
@@ -175,7 +177,7 @@ for(ST in 1){
         nearby_data <- nearby_data[-1,]
       }
     }else{ # GHCN
-      st_id <- nearby_data$ghcn_id[ROW]
+      st_id <- nearby_data$ghcn_id[1]
       
       ghcn_current_st <- subset(stations_ghcn_trimmed,stations_ghcn_trimmed$ID==st_id)
       

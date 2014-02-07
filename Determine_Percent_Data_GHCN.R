@@ -15,17 +15,9 @@ Determine_Percent_Data_GHCN <- function(st.id,
                       paste("Met_Data_Point/",st.id,"/",file_name,sep="")),silent=TRUE)
   }else{
     try(download.file(paste(downloadURL,file_name,sep=""), 
-                      paste("Met_Data_Slope/",USAF,"/",file_name,sep="")),silent=TRUE)
+                      paste("Met_Data_Slope/",st.id,"/",file_name,sep="")),silent=TRUE)
   } 
-  
-  
-  
-  if (data.type =="point"){
-    files=dir(paste("Met_Data_Point","/",USAF,sep=""),"*.op.gz",full.names=T)
-  }else{
-    files=dir(paste("Met_Data_Slope","/",USAF,sep=""),"*.op.gz",full.names=T)
-  }
-  
+
   daily_widths = c(5,1,1,1)
   widths = c(11,4,2,4,rep(daily_widths,31))
   columns = c("ID","YEAR","MONTH","ELEMENT","VAL01","MF01","QF01","SF01",
@@ -120,9 +112,9 @@ Determine_Percent_Data_GHCN <- function(st.id,
   
   if (percent_data >= completeness.required){
     if (data.type =="point"){
-      write.csv(file = paste("Formatted_Met_Data_Point/",st.id), formatted_data, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Point/",st.id,".csv"), formatted_data, row.names=FALSE)
     }else{
-      write.csv(file = paste("Formatted_Met_Data_Slope/",st.id), formatted_data, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Slope/",st.id,".csv"), formatted_data, row.names=FALSE)
     }
   }
   
