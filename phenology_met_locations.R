@@ -31,6 +31,15 @@ if(!loaded){
   }    
 }
 
+# Make some folders for the data
+if(!file.exists("Met_Data_Point/")){
+  dir.create("Met_Data_Point/")
+}
+# Make some folders for the data
+if(!file.exists("Formatted_Met_Data_Point/")){
+  dir.create("Formatted_Met_Data_Point/")
+}
+
 ## load point data file
 #dat <- read.csv("data_file_011314_edit3_point.csv")
 dat <- read.csv("data_file_011314_point.csv")
@@ -41,15 +50,21 @@ lon.unique <- unique(x=dat$Longitude)
 location <- data.frame(lat = dat$Latitude,lon = dat$Longitude)
 
 loc.unique <- unique(location)
+
+small_na = (loc.unique=="na")
+loc.unique[small_na] = NA
 loc.unique <- na.omit(loc.unique)
 loc.index <- as.character(row.names(loc.unique))
 unique_phen_sites <- dat[loc.index,]                ## unique sites
 
+# Making a column to put chosen met station IDs in...
+unique_phen_sites$Met_Station_ID = NA
+
 # The data in unique_phen_sites is all factor/categorical data. Convert at least lat/lon to numeric:
 unique_phen_sites <- transform(unique_phen_sites, 
                                Latitude = as.numeric(levels(Latitude))[Latitude],
-                               Longitude = as.numeric(levels(Longitude))[Longitude])
-
+                               Longitude = as.numeric(levels(Longitude))[Longitude],
+                               Met_Station_ID = as.character(levels(Met_Station_ID))[Met_Station_ID])
 
 stations_gsod <- read.csv("ish-history.csv",na.strings = c("-99999","-999999"))
 stations_gsod <- na.omit(stations_gsod)
@@ -94,7 +109,7 @@ gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(ori
 # Er... this is weird... type in summary(gsod_ghcn_data) and you'll notice that
 # the minimum longitude is -802.33, and the minumum BEGIN.YR is 1763... suprising. Anyway...
 
-# Loop over stations -- everthing, man
+# Loop over stations -- everthing, man , 
 for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   print(sprintf("Processing pheno site %i of %i...",ST,nrow(unique_phen_sites)))
   
@@ -120,10 +135,13 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
     distance[MET_ST] <- gdist(lon.1=lon_MET_ST,lat.1=lat_MET_ST,
                               lon.2=phen_lon,lat.2=phen_lat, units = "km")
   }
-  
   # Let's put them in order of increasing distance:
   nearby_data <- cbind(nearby_data, distance)  
-  nearby_data <- na.omit(nearby_data)
+  
+  # Remove NA Distance
+  na_dist = is.na(nearby_data$distance)
+  nearby_data = subset(nearby_data,!na_dist)
+  
   nearby_data <- nearby_data[with(nearby_data,order(distance)),] # Closest is in row 1
   
   # Find the met stations that have overlapping POR with the desired PHEN POR. 
@@ -147,9 +165,12 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   if(nrow(nearby_data) == 0) {
     BREAK <- TRUE
     no_nearby_stns <- TRUE
+    # Making a column to put chosen met station IDs in...
+    unique_phen_sites$Met_Station_ID[ST] = "NoData"
   }
   
   count = 1
+  
   
   while(!BREAK){
     
@@ -172,7 +193,10 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
                                                        required_data_completeness)
       
       if (fraction_complete >= required_data_completeness){
+        
         BREAK = TRUE
+        unique_phen_sites$Met_Station_ID[ST] = USAF_id
+          
       }else{
         nearby_data <- nearby_data[-1,]
       }
@@ -212,6 +236,8 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
         }else{
           # Otherwise, station is good exit the loop:
           BREAK = TRUE 
+          unique_phen_sites$Met_Station_ID[ST] = st_id
+          
         }
       }else{ # We don't have all three elements
         nearby_data = subset(nearby_data,ghcn_id != st_id)
@@ -223,11 +249,12 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
     if(nrow(nearby_data) == 0) {
       BREAK <- TRUE
       no_nearby_stns <- TRUE
+      unique_phen_sites$Met_Station_ID[ST] = "NoDATA"
     }
     
   }
   
-  
+    write.csv(unique_phen_sites,file="PointMetData.csv")
   
 }
 

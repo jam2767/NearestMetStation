@@ -49,50 +49,48 @@ Determine_Percent_Data_GSOD <- function(isd.station.usaf,
   
   start_year=min(substr(files,nchar(files)-9,nchar(files)-6))
   end_year=max(substr(files,nchar(files)-9,nchar(files)-6))
-  alldates=data.frame(fdate=seq(from=as.Date(paste(start_year,"-01-01",sep="")), 
-                                to=as.Date(paste(end_year,"-12-31",sep="")), by=1),
-                      )
+  alldates=data.frame(Date=seq(from=as.Date(paste(start_year,"-01-01",sep="")), 
+                                to=as.Date(paste(end_year,"-12-31",sep="")), by=1))
   
   stn=matrix()
   tmin=matrix()
   tmax=matrix()
   ppt=matrix()
-  fdate=matrix()
+  Date=matrix()
   
   for (tmpfile in files){
-    #
-    # There is more data in this dataset we can extract later as we need it.
-    #
-    #
     tmpstring<-grep("MAX",readLines( gzfile(tmpfile)),value=TRUE,invert=TRUE)
     stn<-c(stn,as.numeric(as.character(substring(tmpstring,1,5))))
     tmax<-c(tmax,as.numeric(as.character(substring(tmpstring,103,108))))
     tmin<-c(tmin,as.numeric(as.character(substring(tmpstring,111,116))))
     ppt<-c(ppt,as.numeric(as.character(substring(tmpstring,119,123))))
-    fdate<-c(fdate,as.Date(yearmoda<-substring(tmpstring,15,22),
+    Date<-c(Date,as.Date(yearmoda<-substring(tmpstring,15,22),
                            "%Y%m%d")) }
   
   stn<-as.numeric(stn)
   ppt<-as.numeric(ppt)
   tmax<-as.numeric(tmax)
   tmin<-as.numeric(tmin)
-  fdate<-as.Date(as.numeric(fdate), origin="1970-01-01")
+  Date<-as.Date(as.numeric(Date), origin="1970-01-01")
   forcing=data.frame(stn=stn,ppt=ppt,tmax=tmax,tmin=tmin,
-                     fdate=as.Date(fdate))
+                     Date=as.Date(Date))
   forcing=na.omit(forcing)
   forcing=merge(alldates,forcing,all=TRUE)
-  forcing$ppt_mm <- forcing$ppt*25.4
   forcing$tmax_C <- round((forcing$tmax-32)*5/9, digits=2)
   forcing$tmin_C <- round((forcing$tmin-32)*5/9, digits=2)
+  forcing$ppt_mm <- forcing$ppt*25.4
   forcing$ppt_mm[forcing$ppt_mm > 999]=0.0
   
-  percent_data = nrow(na.omit(forcing))/nrow(forcing)
+  forcingV2 <- forcing[c("Date","tmax_C","tmin_C","ppt_mm")]
+  percent_data = nrow(na.omit(forcingV2))/nrow(forcingV2)
   
   if (percent_data >= completeness.required){
     if (data.type =="point"){
-      write.csv(file = paste("Formatted_Met_Data_Point/",USAF,".csv"), forcing, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Point/",USAF,".csv",sep=""), forcingV2, row.names=FALSE)
+      unlink(paste("Met_Data_Point","/",USAF,sep=""),recursive=TRUE)
     }else{
-      write.csv(file = paste("Formatted_Met_Data_Slope/",USAF,".csv"), forcing, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Slope/",USAF,".csv",sep=""), forcingV2, row.names=FALSE)
+      unlink(paste("Met_Data_Slope","/",USAF,sep=""),recursive=TRUE)
     }
   }
   
