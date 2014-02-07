@@ -95,8 +95,8 @@ gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(ori
 # the minimum longitude is -802.33, and the minumum BEGIN.YR is 1763... suprising. Anyway...
 
 # Loop over stations -- everthing, man
-for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
-  
+# for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
+for(ST in 1){
   print(sprintf("Processing pheno site %i of %i...",ST,nrow(unique_phen_sites)))
   
   # latitude and longitude of the phenology site:
@@ -152,7 +152,7 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
     no_nearby_stns <- TRUE
   }
   
-  while (~BREAK) {
+  while(!BREAK){
     
     # Figure out whether gsod or ghcn:
     dataset <- as.character(nearby_data$dataset[1])
@@ -229,182 +229,3 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   
 }
 
-
-
-
-for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
-  
-  print(sprintf("Processing station %i of %i...",ST,length(loc.index)))
-  BREAK = 0
-  count = 1
-  
-  while (BREAK == 0) {
-    
-    sorted.distance = sort(distance[ST,],decreasing = FALSE, index.return = TRUE)
-    
-    min.dist.index = sorted.distance$ix[count]
-    min.dist = sorted.distance$x[count]
-    
-    year.start.ISD = as.numeric(substr(stations_gsod$BEGIN[min.dist.index],1,4))
-    year.end.ISD = as.numeric(substr(stations_gsod$END[min.dist.index],1,4))
-    
-    year.start.pheno = as.numeric(unique_phen_sites$Year_Sampled_Start[ST])
-    year.end.pheno = as.numeric(unique_phen_sites$Year_Sampled_End[ST])
-    
-    if(is.na(year.end.pheno)){
-      if(year.end.ISD < year.start.pheno){
-        count = count + 1
-        print(count)
-      } else if(year.start.ISD > year.start.pheno){
-        count = count + 1
-        print(count)
-      } else if(year.start.pheno >= year.start.ISD & year.start.pheno <= year.end.ISD){
-        phen.station.id = numeric()
-        phen.station.id = as.numeric(row.names(loc.unique[ST,]))
-        isd.station.usaf = stations_gsod$USAF[min.dist.index]
-        isd.station.wban = stations_gsod$WBAN[min.dist.index]
-        
-        phenology.isd.stations[ST,1] = phen.station.id
-        phenology.isd.stations[ST,2] = isd.station.usaf
-        phenology.isd.stations[ST,3] = isd.station.wban
-        phenology.isd.stations[ST,4] = min.dist.index 
-        phenology.isd.stations[ST,5] = min.dist 
-        phenology.isd.stations[ST,6] =year.start.ISD 
-        phenology.isd.stations[ST,7] =year.end.ISD 
-        phenology.isd.stations[ST,8] =year.start.pheno
-        phenology.isd.stations[ST,9] =year.end.pheno
-        
-        
-        BREAK = 1
-      }   
-      else {
-        if (year.start.ISD <= year.start.pheno & year.end.ISD >= year.end.pheno){
-          phen.station.id = numeric()
-          phen.station.id = as.numeric(row.names(loc.unique[ST,]))
-          isd.station.usaf = stations_gsod$USAF[min.dist.index]
-          isd.station.wban = stations_gsod$WBAN[min.dist.index]
-          
-          phenology.isd.stations[ST,1] = phen.station.id
-          phenology.isd.stations[ST,2] = isd.station.usaf
-          phenology.isd.stations[ST,3] = isd.station.wban
-          phenology.isd.stations[ST,4] = min.dist.index 
-          phenology.isd.stations[ST,5] = min.dist 
-          phenology.isd.stations[ST,6] =year.start.ISD 
-          phenology.isd.stations[ST,7] =year.end.ISD 
-          phenology.isd.stations[ST,8] =year.start.pheno
-          phenology.isd.stations[ST,9] =year.end.pheno
-          
-          BREAK = 1
-          
-        } else{
-          count = count + 1
-        }
-        
-      } 
-    }
-  }
-  
-  
-  
-  
-  ############################################# Old stuff below
-  
-  
-  # distance = matrix(0,length(loc.index),nrow(stations_gsod))
-  # for(ST in 1:length(loc.index)){
-  #   lati = unique_phen_sites$Latitude[ST]  
-  #   loni = unique_phen_sites$Longitude[ST]   
-  #   print(ST)
-  #   for(ISD in 1:nrow(stations_gsod)){
-  #     lat_ISD = stations_gsod$LAT[ISD]
-  #     lon_ISD = stations_gsod$LON[ISD]
-  #     distance[ST,ISD] = gdist(lon.1=loni,lat.1=lati,
-  #                              lon.2=lon_ISD,lat.2=lat_ISD, units = "km")
-  #     
-  #   }
-  #   
-  # }
-  
-  
-  #write.csv(x=distance,file="distance.csv")
-  distance = read.csv("distance.csv")
-  distance = as.matrix(distance)
-  ## start and end date for station record and pheno data. Find min distance
-  ## between stations within required period of record
-  phenology.isd.stations = matrix(0,nrow(loc.unique),9)
-  for(ST in 1:length(loc.index)){
-    print(ST)
-    BREAK = 0
-    count = 1
-    while (BREAK == 0) {
-      
-      sorted.distance = sort(distance[ST,],decreasing = FALSE, index.return = TRUE)
-      
-      min.dist.index = sorted.distance$ix[count]
-      min.dist = sorted.distance$x[count]
-      
-      year.start.ISD = as.numeric(substr(stations_gsod$BEGIN[min.dist.index],1,4))
-      year.end.ISD = as.numeric(substr(stations_gsod$END[min.dist.index],1,4))
-      
-      year.start.pheno = as.numeric(unique_phen_sites$Year_Sampled_Start[ST])
-      year.end.pheno = as.numeric(unique_phen_sites$Year_Sampled_End[ST])
-      
-      if(is.na(year.end.pheno)){
-        if(year.end.ISD < year.start.pheno){
-          count = count + 1
-          print(count)
-        } else if(year.start.ISD > year.start.pheno){
-          count = count + 1
-          print(count)
-        } else if(year.start.pheno >= year.start.ISD & year.start.pheno <= year.end.ISD){
-          phen.station.id = numeric()
-          phen.station.id = as.numeric(row.names(loc.unique[ST,]))
-          isd.station.usaf = stations_gsod$USAF[min.dist.index]
-          isd.station.wban = stations_gsod$WBAN[min.dist.index]
-          
-          phenology.isd.stations[ST,1] = phen.station.id
-          phenology.isd.stations[ST,2] = isd.station.usaf
-          phenology.isd.stations[ST,3] = isd.station.wban
-          phenology.isd.stations[ST,4] = min.dist.index 
-          phenology.isd.stations[ST,5] = min.dist 
-          phenology.isd.stations[ST,6] =year.start.ISD 
-          phenology.isd.stations[ST,7] =year.end.ISD 
-          phenology.isd.stations[ST,8] =year.start.pheno
-          phenology.isd.stations[ST,9] =year.end.pheno
-          
-          
-          BREAK = 1
-        }   
-        else {
-          if (year.start.ISD <= year.start.pheno & year.end.ISD >= year.end.pheno){
-            phen.station.id = numeric()
-            phen.station.id = as.numeric(row.names(loc.unique[ST,]))
-            isd.station.usaf = stations_gsod$USAF[min.dist.index]
-            isd.station.wban = stations_gsod$WBAN[min.dist.index]
-            
-            phenology.isd.stations[ST,1] = phen.station.id
-            phenology.isd.stations[ST,2] = isd.station.usaf
-            phenology.isd.stations[ST,3] = isd.station.wban
-            phenology.isd.stations[ST,4] = min.dist.index 
-            phenology.isd.stations[ST,5] = min.dist 
-            phenology.isd.stations[ST,6] =year.start.ISD 
-            phenology.isd.stations[ST,7] =year.end.ISD 
-            phenology.isd.stations[ST,8] =year.start.pheno
-            phenology.isd.stations[ST,9] =year.end.pheno
-            
-            BREAK = 1
-            
-          } else{
-            count = count + 1
-          }
-          
-        } 
-      }
-    }
-    
-    colnames(phenology.isd.stations) <- c("ID","USAF","WBAN","DIndex","MinDist",
-                                          "Start_Station","End_Station","Start_Pheno",
-                                          "End_Pheno")
-    
-    write.csv(x=phenology.isd.stations,file="phenology_nearest_station.csv",row.names=FALSE)
-    
