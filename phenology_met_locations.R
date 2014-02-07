@@ -1,6 +1,7 @@
 # Source
 
-data_type_point_slope = "point" #"slope", POINT OR SLOPE!!!!!!!!
+#data_type_point_slope = "point" # POINT OR SLOPE!!!!!!!!
+data_type_point_slope = "slope" # POINT OR SLOPE!!!!!!!!
 
 source("Determine_Percent_Data_GHCN.R")
 source("Determine_Percent_Data_GSOD.R")

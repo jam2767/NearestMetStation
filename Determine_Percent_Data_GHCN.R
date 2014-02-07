@@ -5,12 +5,16 @@ Determine_Percent_Data_GHCN <- function(st.id,
                                         data.type,
                                         completeness.required){
 
-  dir.create(paste("Met_Data_Point/",st.id,sep=""))
+  if (data.type=="point"){
+    dir.create(paste("Met_Data_Point/",st.id,sep=""))
+  }else{
+    dir.create(paste("Met_Data_Slope/",st.id,sep="")) 
+  }
   
   downloadURL = paste("ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/daily/all/",sep = "")
   file_name = paste(st.id,".dly",sep ="")
   
-  if (data.type =="point"){
+  if(data.type =="point"){
     try(download.file(paste(downloadURL,file_name,sep=""), 
                       paste("Met_Data_Point/",st.id,"/",file_name,sep="")),silent=TRUE)
   }else{
@@ -53,8 +57,14 @@ Determine_Percent_Data_GHCN <- function(st.id,
               "VAL31","MF31","QF31","SF31")
   
   # Open GHCN Data
-  ghcn_data = read.fwf(paste("Met_Data_Point/",st.id,"/",file_name,sep=""),
-                       widths,header=FALSE,col.names=columns)
+  if (data.type=="point"){
+    ghcn_data = read.fwf(paste("Met_Data_Point/",st.id,"/",file_name,sep=""),
+                         widths,header=FALSE,col.names=columns)
+  }else{
+    ghcn_data = read.fwf(paste("Met_Data_Slope/",st.id,"/",file_name,sep=""),
+                         widths,header=FALSE,col.names=columns)
+  }
+    
   
   # Throw out everything but Tmax, Tmin, Precip
   ghcn_data = subset(ghcn_data,ghcn_data$ELEMENT == "PRCP" | ghcn_data$ELEMENT == "TMAX" | ghcn_data$ELEMENT == "TMIN")
