@@ -90,9 +90,9 @@ Determine_Percent_Data_GSOD <- function(isd.station.usaf,
   
   if (percent_data >= completeness.required){
     if (data.type =="point"){
-      write.csv(file = paste("Formatted_Met_Data_Point/",USAF), forcing, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Point/",USAF,".csv"), forcing, row.names=FALSE)
     }else{
-      write.csv(file = paste("Formatted_Met_Data_Slope/",USAF), forcing, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Slope/",USAF,".csv"), forcing, row.names=FALSE)
     }
   }
   
