@@ -71,6 +71,11 @@ Determine_Percent_Data_GHCN <- function(st.id,
   
   ghcn_data =ghcn_data[,cols_to_keep] 
   
+  if(nrow(ghcn_data) == 0){
+    percent_data = 0
+    return(percent_data)
+  }
+  
   # change -9999 to NA
   ghcn_data[ghcn_data==-9999] = NA
   
@@ -112,9 +117,11 @@ Determine_Percent_Data_GHCN <- function(st.id,
   
   if (percent_data >= completeness.required){
     if (data.type =="point"){
-      write.csv(file = paste("Formatted_Met_Data_Point/",st.id,".csv"), formatted_data, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Point/",st.id,".csv",sep=""), formatted_data, row.names=FALSE)
+      unlink(paste("Met_Data_Point","/",st.id,sep=""),recursive=TRUE)
     }else{
-      write.csv(file = paste("Formatted_Met_Data_Slope/",st.id,".csv"), formatted_data, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Slope/",st.id,".csv",sep=""), formatted_data, row.names=FALSE)
+      unlink(paste("Met_Data_Slope","/",st.id,sep=""),recursive=TRUE)
     }
   }
   
