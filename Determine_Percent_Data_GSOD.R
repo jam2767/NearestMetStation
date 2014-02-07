@@ -50,7 +50,8 @@ Determine_Percent_Data_GSOD <- function(isd.station.usaf,
   start_year=min(substr(files,nchar(files)-9,nchar(files)-6))
   end_year=max(substr(files,nchar(files)-9,nchar(files)-6))
   alldates=data.frame(fdate=seq(from=as.Date(paste(start_year,"-01-01",sep="")), 
-                                to=as.Date(paste(end_year,"-12-31",sep="")), by=1))
+                                to=as.Date(paste(end_year,"-12-31",sep="")), by=1),
+                      )
   
   stn=matrix()
   tmin=matrix()
