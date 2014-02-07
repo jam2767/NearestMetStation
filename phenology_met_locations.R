@@ -1,4 +1,7 @@
 # Source
+
+data_type_point_slope = "point" #"slope", POINT OR SLOPE!!!!!!!!
+
 source("Determine_Percent_Data_GHCN.R")
 source("Determine_Percent_Data_GSOD.R")
 
@@ -31,18 +34,36 @@ if(!loaded){
   }    
 }
 
-# Make some folders for the data
-if(!file.exists("Met_Data_Point/")){
-  dir.create("Met_Data_Point/")
+if (data_type_point_slope == "point"){
+  # Make some folders for the data
+  if(!file.exists("Met_Data_Point/")){
+    dir.create("Met_Data_Point/")
+  }
+  # Make some folders for the data
+  if(!file.exists("Formatted_Met_Data_Point/")){
+    dir.create("Formatted_Met_Data_Point/")
+  }
+}else{
+  # Make some folders for the data
+  if(!file.exists("Met_Data_Slope/")){
+    dir.create("Met_Data_Slope/")
+  }
+  # Make some folders for the data
+  if(!file.exists("Formatted_Met_Data_Slope/")){
+    dir.create("Formatted_Met_Data_Slope/")
+  }
 }
-# Make some folders for the data
-if(!file.exists("Formatted_Met_Data_Point/")){
-  dir.create("Formatted_Met_Data_Point/")
-}
+
+    
 
 ## load point data file
 #dat <- read.csv("data_file_011314_edit3_point.csv")
-dat <- read.csv("data_file_011314_point.csv")
+if(data_type_point_slope == "point"){
+  dat <- read.csv("data_file_011314_point.csv")
+}else{
+  dat <- read.csv("data_file_011314_slope.csv")
+}
+
 names <- colnames(dat)
 lat.unique <- unique(x=dat$Latitude)
 lon.unique <- unique(x=dat$Longitude)
@@ -189,7 +210,7 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
       fraction_complete <- Determine_Percent_Data_GSOD(USAF_id,WBAN_id,
                                                        phen_begin,
                                                        phen_end,
-                                                       "point",
+                                                       data_type_point_slope,
                                                        required_data_completeness)
       
       if (fraction_complete >= required_data_completeness){
@@ -226,7 +247,7 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
         fraction_complete <- Determine_Percent_Data_GHCN(st_id,
                                                          phen_begin,
                                                          phen_end,
-                                                         "point",
+                                                         data_type_point_slope,
                                                          required_data_completeness)
         
         # If the station doesn't have enough data, remove it from nearby_data:
@@ -254,7 +275,12 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
     
   }
   
+  if (data_type_point_slope == "point"){
     write.csv(unique_phen_sites,file="PointMetData.csv")
+  }else{
+    write.csv(unique_phen_sites,file="SlopeMetData.csv")
+  }
+    
   
 }
 
