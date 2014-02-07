@@ -120,9 +120,9 @@ Determine_Percent_Data_GHCN <- function(st.id,
   
   if (percent_data >= completeness.required){
     if (data.type =="point"){
-      write.csv(file = paste("Formatted_Met_Data_Point/",USAF), forcing, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Point/",st.id), formatted_data, row.names=FALSE)
     }else{
-      write.csv(file = paste("Formatted_Met_Data_Slope/",USAF), forcing, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Slope/",st.id), formatted_data, row.names=FALSE)
     }
   }
   
