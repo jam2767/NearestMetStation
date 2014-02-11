@@ -5,27 +5,23 @@ Determine_Percent_Data_GHCN <- function(st.id,
                                         data.type,
                                         completeness.required){
 
-  dir.create(paste("Met_Data_Point/",st.id,sep=""))
+  if (data.type=="point"){
+    dir.create(paste("Met_Data_Point/",st.id,sep=""))
+  }else{
+    dir.create(paste("Met_Data_Slope/",st.id,sep="")) 
+  }
   
   downloadURL = paste("ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/daily/all/",sep = "")
   file_name = paste(st.id,".dly",sep ="")
   
-  if (data.type =="point"){
+  if(data.type =="point"){
     try(download.file(paste(downloadURL,file_name,sep=""), 
                       paste("Met_Data_Point/",st.id,"/",file_name,sep="")),silent=TRUE)
   }else{
     try(download.file(paste(downloadURL,file_name,sep=""), 
-                      paste("Met_Data_Slope/",USAF,"/",file_name,sep="")),silent=TRUE)
+                      paste("Met_Data_Slope/",st.id,"/",file_name,sep="")),silent=TRUE)
   } 
-  
-  
-  
-  if (data.type =="point"){
-    files=dir(paste("Met_Data_Point","/",USAF,sep=""),"*.op.gz",full.names=T)
-  }else{
-    files=dir(paste("Met_Data_Slope","/",USAF,sep=""),"*.op.gz",full.names=T)
-  }
-  
+
   daily_widths = c(5,1,1,1)
   widths = c(11,4,2,4,rep(daily_widths,31))
   columns = c("ID","YEAR","MONTH","ELEMENT","VAL01","MF01","QF01","SF01",
@@ -61,11 +57,17 @@ Determine_Percent_Data_GHCN <- function(st.id,
               "VAL31","MF31","QF31","SF31")
   
   # Open GHCN Data
-  ghcn_data = read.fwf(paste("Met_Data_Point/",st.id,"/",file_name,sep=""),
-                       widths,header=FALSE,col.names=columns)
+  if (data.type=="point"){
+    ghcn_data = read.fwf(paste("Met_Data_Point/",st.id,"/",file_name,sep=""),
+                         widths,header=FALSE,col.names=columns)
+  }else{
+    ghcn_data = read.fwf(paste("Met_Data_Slope/",st.id,"/",file_name,sep=""),
+                         widths,header=FALSE,col.names=columns)
+  }
+    
   
   # Throw out everything but Tmax, Tmin, Precip
-  ghcn_data = subset(ghcn_data,ghcn_data$ELEMENT == "PRCP" | ghcn_data$ELEMENT == "TMAX" | ghcn_data$ELEMENT == "TMAX")
+  ghcn_data = subset(ghcn_data,ghcn_data$ELEMENT == "PRCP" | ghcn_data$ELEMENT == "TMAX" | ghcn_data$ELEMENT == "TMIN")
   
   # Throw out unnesccesary years
   ghcn_data = subset(ghcn_data, ghcn_data$YEAR >= year.start.pheno & ghcn_data$YEAR <= year.end.pheno )
@@ -76,57 +78,60 @@ Determine_Percent_Data_GHCN <- function(st.id,
                    "VAL10","VAL11","VAL12","VAL13","VAL14","VAL15","VAL16","VAL17",
                    "VAL18","VAL19","VAL20","VAL21","VAL22","VAL23","VAL24","VAL25",
                    "VAL26","VAL27","VAL28","VAL29","VAL30","VAL31")
+  
   ghcn_data =ghcn_data[,cols_to_keep] 
+  
+  if(nrow(ghcn_data) == 0){
+    percent_data = 0
+    return(percent_data)
+  }
   
   # change -9999 to NA
   ghcn_data[ghcn_data==-9999] = NA
   
-  # 
-  start_year=min(substr(files,nchar(files)-9,nchar(files)-6))
-  end_year=max(substr(files,nchar(files)-9,nchar(files)-6))
-  alldates=data.frame(fdate=seq(from=as.Date(paste(start_year,"-01-01",sep="")), 
-                                to=as.Date(paste(end_year,"-12-31",sep="")), by=1))
+  # Create Dates
+  formatted_data = data.frame(Date=seq(from=as.Date(paste(year.start.pheno,"-01-01",sep="")), 
+                               to=as.Date(paste(year.end.pheno,"-12-31",sep="")), by=1),
+                              tmax_C = NA, tmin_C = NA, ppt_mm = NA)
+
+  month_lengths <- c(31,28,31,30,31,30,31,31,30,31,30,31)
+  for (ROW in 1:nrow(ghcn_data)){
+
+    formatted_data_vec = as.vector(unlist(ghcn_data[ROW,4:34]))
+    
+    # If February in leap year:
+    if( (ghcn_data$YEAR[ROW]%%4 == 0) & (ghcn_data$MONTH[ROW] == 2) ){ 
+      month_lengths[2] = 29
+      formatted_data_vec = formatted_data_vec[1:month_lengths[ghcn_data$MONTH[ROW]]]
+      month_lengths[2] = 28        
+    }else { # Not leap year February:
+      formatted_data_vec = formatted_data_vec[1:month_lengths[ghcn_data$MONTH[ROW]]]
+    }
+    
+    # Calculate the start index:
+    first_date = as.Date(paste(ghcn_data$YEAR[ROW],ghcn_data$MONTH[ROW],"01",sep="-"))
+    start_index = which(formatted_data$Date==first_date)
+    end_index = start_index + length(formatted_data_vec) - 1
+    
+    if (as.character(ghcn_data$ELEMENT[ROW]) == "PRCP"){ 
+      formatted_data$ppt_mm[start_index:end_index] = formatted_data_vec/10 # unit convertion from tenths of mm
+    }else if(as.character(ghcn_data$ELEMENT[ROW]) == "TMAX"){
+      formatted_data$tmax_C[start_index:end_index] = formatted_data_vec/10 # unit convertion from tenths of deg-C
+    }else{ #TMIN
+      formatted_data$tmin_C[start_index:end_index] = formatted_data_vec/10 # unit convertion from tenths of deg-C
+    }
+    
+  }
   
-  stn=matrix()
-  tmin=matrix()
-  tmax=matrix()
-  ppt=matrix()
-  fdate=matrix()
-  
-  for (tmpfile in files){
-    #
-    # There is more data in this dataset we can extract later as we need it.
-    #
-    #
-    tmpstring<-grep("MAX",readLines(gzfile(tmpfile)),value=TRUE,invert=TRUE)
-    stn<-c(stn,as.numeric(as.character(substring(tmpstring,1,5))))
-    tmax<-c(tmax,as.numeric(as.character(substring(tmpstring,103,108))))
-    tmin<-c(tmin,as.numeric(as.character(substring(tmpstring,111,116))))
-    ppt<-c(ppt,as.numeric(as.character(substring(tmpstring,119,123))))
-    fdate<-c(fdate,as.Date(yearmoda<-substring(tmpstring,15,22),
-                           "%Y%m%d")) }
-  
-  stn<-as.numeric(stn)
-  ppt<-as.numeric(ppt)
-  tmax<-as.numeric(tmax)
-  tmin<-as.numeric(tmin)
-  fdate<-as.Date(as.numeric(fdate), origin="1970-01-01")
-  forcing=data.frame(stn=stn,ppt=ppt,tmax=tmax,tmin=tmin,
-                     fdate=as.Date(fdate))
-  forcing=na.omit(forcing)
-  forcing=merge(alldates,forcing,all=TRUE)
-  forcing$ppt_mm <- forcing$ppt*25.4
-  forcing$tmax_C <- round((forcing$tmax-32)*5/9, digits=2)
-  forcing$tmin_C <- round((forcing$tmin-32)*5/9, digits=2)
-  forcing$ppt_mm[forcing$ppt_mm > 999]=0.0
-  
-  percent_data = nrow(na.omit(forcing))/nrow(forcing)
+  percent_data = nrow(na.omit(formatted_data))/nrow(formatted_data)
   
   if (percent_data >= completeness.required){
     if (data.type =="point"){
-      write.csv(file = paste("Formatted_Met_Data_Point/",USAF), forcing, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Point/",st.id,".csv",sep=""), formatted_data, row.names=FALSE)
+      unlink(paste("Met_Data_Point","/",st.id,sep=""),recursive=TRUE)
     }else{
-      write.csv(file = paste("Formatted_Met_Data_Slope/",USAF), forcing, row.names=FALSE)
+      write.csv(file = paste("Formatted_Met_Data_Slope/",st.id,".csv",sep=""), formatted_data, row.names=FALSE)
+      unlink(paste("Met_Data_Slope","/",st.id,sep=""),recursive=TRUE)
     }
   }
   
