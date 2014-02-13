@@ -16,29 +16,27 @@ unique_data$Site_ID = NA
 for (ROW in 1:nrow(unique_data)){
   
   # Find the row(s) in master data that corresponds to row in unique
-  unique_site = as.character(unique_data$Site[ROW])
   unique_lat = as.numeric(unique_data$Latitude[ROW])
   unique_lon = as.numeric(unique_data$Longitude[ROW])
   
-#  site = (as.character(master_data$Site) == unique_site & master_data$Latitude == unique_lat & 
-#            master_data$Longitude == unique_lon)
-site = (as.character(master_data$Site) == unique_site & master_data$Latitude == unique_lat & 
-          master_data$Longitude == unique_lon)
+  # Match the lat/lon values (might be som rounding errors, so give a tolerance)
+  matching_sites = ( abs(master_data$Latitude-unique_lat) < 0.01 & 
+          abs(master_data$Longitude-unique_lon) < 0.01 )
   
   # Assign site ID, 1000 + ROW 
-  master_data$Site_ID[site] = ROW + 1000
+  master_data$Site_ID[matching_sites] = ROW + 1000
   unique_data$Site_ID[ROW] = ROW + 1000
   
   # Put Met Station ID in master data frame
-  master_data$Met_Station_ID[site] = as.character(unique_data$Met_Station_ID[ROW])
+  master_data$Met_Station_ID[matching_sites] = as.character(unique_data$Met_Station_ID[ROW])
   
 }
 
-# Okay, noy I think we should reshape the master data file so that each
+# Okay, now I think we should reshape the master data file so that each
 # measurement has its own row as well as a new column for the type of
 # measurement, one of {LeafFall50, LeafFall80, LeafFall100, LAI_zero}
 #
-# Let's kick this pig!
+# Let's do it!
 
 # First, find all of the records that have LeafFall50:
 has_LF50 <- !is.na(master_data$LeafFall50)
@@ -70,6 +68,8 @@ response_var_data <- rbind(LF50_data,LF80_data,LF100_data,LAI_zero_data)
 
 # We'll delete the response variable columns we aren't using:
 response_var_data <- response_var_data[,-(23:67)]
+
+# GREAT!  Newly re-formatted data frame!
 
 # Now, we'll get the aggregated (1-30, 31-60, 61-90 day) met data for each. For
 # now, if the pheno_date is < {30,60,90}, then NA
