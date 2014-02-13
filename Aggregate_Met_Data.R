@@ -1,7 +1,7 @@
 # Aggregate the met data
 
 # LOAD MASTER DATA FILE
-master_data <- read.csv("data_file_013014_point_edit2.csv")
+master_data <- read.csv("data_file_point.csv")
 # Replace little "na"s with NA:
 small_na = (master_data=="na")
 master_data[small_na] = NA
@@ -39,32 +39,7 @@ for (ROW in 1:nrow(unique_data)){
 # Let's do it!
 
 # First, find all of the records that have LeafFall50:
-has_LF50 <- !is.na(master_data$LeafFall50)
-LF50_data <- subset(master_data[has_LF50,])
-LF50_data$pheno_method <- "LeafFall50"
-LF50_data$pheno_day <- LF50_data$LeafFall50
 
-# Now for LeafFall80:
-has_LF80 <- !is.na(master_data$LeafFall80)
-LF80_data <- subset(master_data[has_LF80,])
-LF80_data$pheno_method <- "LeafFall80"
-LF80_data$pheno_day <- LF80_data$LeafFall80
-
-# Now for LeafFall100:
-has_LF100 <- !is.na(master_data$LeafFall100)
-LF100_data <- subset(master_data[has_LF100,])
-LF100_data$pheno_method <- "LeafFall100"
-LF100_data$pheno_day <- LF100_data$LeafFall100
-
-# Now for LAI_zero:
-has_LAI_zero <- !is.na(master_data$LAI_zero)
-LAI_zero_data <- subset(master_data[has_LAI_zero,])
-LAI_zero_data$pheno_method <- "LAI_zero"
-LAI_zero_data$pheno_day <- LAI_zero_data$LAI_zero
-
-# Join them together into one data frame, but now where each row is a single
-# observation (instead of having both LeafFall50 AND LeafFall80, for example)
-response_var_data <- rbind(LF50_data,LF80_data,LF100_data,LAI_zero_data)
 
 # We'll delete the response variable columns we aren't using:
 response_var_data <- response_var_data[,-(23:67)]
