@@ -2,6 +2,10 @@
 data_type_point_slope = "point" # POINT OR SLOPE!!!!!!!!
 #data_type_point_slope = "slope" # POINT OR SLOPE!!!!!!!!
 
+# Okay, this is pretty bad coding, but if there is a station with clearly bad
+# data upon further observation, put its ID in this character vector:
+bad_station_ids <- c("994400")
+
 # Source
 source("Determine_Percent_Data_GHCN.R")
 source("Determine_Percent_Data_GSOD.R")
@@ -55,7 +59,7 @@ if (data_type_point_slope == "point"){
   }
 }
 
-    
+
 
 ## load point data file
 if(data_type_point_slope == "point"){
@@ -89,14 +93,15 @@ loc.index <- as.integer(row.names(loc.unique))
 unique_phen_sites <- dat[loc.index,]                ## unique sites
 
 # Making a column to put chosen met station IDs in...
-unique_phen_sites$Met_Station_ID = NA
+unique_phen_sites$Met_Station_ID = as.character(NA)
 
 # The data in unique_phen_sites is all factor/categorical data. Convert at least
 # lat/lon to numeric:
-unique_phen_sites <- transform(unique_phen_sites, 
-                               Latitude = as.numeric(levels(Latitude))[Latitude],
-                               Longitude = as.numeric(levels(Longitude))[Longitude],
-                               Met_Station_ID = as.character(levels(Met_Station_ID))[Met_Station_ID])
+
+# This seems to only be necessary on some computers... not sure what it depends on...
+#unique_phen_sites <- transform(unique_phen_sites, 
+#                               Latitude = as.numeric(levels(Latitude))[Latitude],
+#                               Longitude = as.numeric(levels(Longitude))[Longitude])
 
 stations_gsod <- read.csv("ish-history.csv",na.strings = c("-99999","-999999"))
 stations_gsod <- na.omit(stations_gsod)
@@ -224,11 +229,19 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
                                                        data_type_point_slope,
                                                        required_data_completeness)
       
-      if (fraction_complete >= required_data_completeness){
+      # If there is sufficient data, then it's good!
+      good_data <- (fraction_complete >= required_data_completeness)
+      
+      # But if the station is on our list of bad stations, then it's not good:
+      if (any((WBAN_id == bad_station_ids) | (USAF_id == bad_station_ids))) {
+        good_data = FALSE
+      }
+      
+      if (good_data){
         
         BREAK = TRUE
         unique_phen_sites$Met_Station_ID[ST] = USAF_id
-          
+        
       }else{
         nearby_data <- nearby_data[-1,]
       }
@@ -261,16 +274,25 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
                                                          data_type_point_slope,
                                                          required_data_completeness)
         
-        # If the station doesn't have enough data, remove it from nearby_data:
-        if (fraction_complete<required_data_completeness){
-          # Delete all rows with that ID (same station)
-          nearby_data = subset(nearby_data,ghcn_id != st_id)
-        }else{
-          # Otherwise, station is good exit the loop:
-          BREAK = TRUE 
-          unique_phen_sites$Met_Station_ID[ST] = st_id
-          
+        
+        # If there is sufficient data, then it's good!
+        good_data <- (fraction_complete >= required_data_completeness)
+        
+        # But if the station is on our list of bad stations, then it's not good:
+        if (any(st_id == bad_station_ids)) {
+          good_data = FALSE
         }
+        
+        if (good_data){ # Station is good, exit the loop
+          BREAK = TRUE
+          unique_phen_sites$Met_Station_ID[ST] = st_id          
+        }else{
+          # Otherwise, delete all rows with that ID (same station)
+          nearby_data = subset(nearby_data,ghcn_id != st_id)
+        }
+        
+        
+        
       }else{ # We don't have all three elements
         nearby_data = subset(nearby_data,ghcn_id != st_id)
       }    
@@ -291,7 +313,7 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   }else{
     write.csv(unique_phen_sites,file="SlopeMetData.csv")
   }
-    
+  
   
 }
 
