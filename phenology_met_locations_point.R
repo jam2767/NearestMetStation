@@ -114,13 +114,21 @@ if(!file.exists("stations_ghcn_trimmed.csv")) {
 stations_ghcn_trimmed <- read.csv("stations_ghcn_trimmed.csv")
 
 # Join the two datasets:
+# gsod_ghcn_data <- data.frame(rep("gsod",nrow(stations_gsod)),
+#                                       1:nrow(stations_gsod),
+#                                       as.numeric(stations_gsod$LAT), 
+#                                       as.numeric(stations_gsod$LON),
+#                                       as.numeric(substr(stations_gsod$BEGIN,1,4)),
+#                                       as.numeric(substr(stations_gsod$END,1,4)),
+#                                       rep("NA",nrow(stations_gsod)))
+
 gsod_ghcn_data <- as.data.frame(cbind(rep("gsod",nrow(stations_gsod)),
-                                      1:nrow(stations_gsod),
-                                      as.numeric(stations_gsod$LAT), 
-                                      as.numeric(stations_gsod$LON),
-                                      as.numeric(substr(stations_gsod$BEGIN,1,4)),
-                                      as.numeric(substr(stations_gsod$END,1,4)),
-                                      rep("NA",nrow(stations_gsod))))
+                                     1:nrow(stations_gsod),
+                                     as.numeric(stations_gsod$LAT), 
+                                     as.numeric(stations_gsod$LON),
+                                     as.numeric(substr(stations_gsod$BEGIN,1,4)),
+                                     as.numeric(substr(stations_gsod$END,1,4)),
+                                     rep("NA",nrow(stations_gsod))))
 colnames(gsod_ghcn_data) <- c("dataset","orig.row.num","LAT","LON","BEGIN.YR","END.YR","ELEMENT")
 
 # Add ghcn data to gsod_ghcn_data

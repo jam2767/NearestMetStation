@@ -195,7 +195,7 @@ for(ROW in 1:nrow(response_var_data)) {
                                                       na.rm=TRUE)
       # We need a mean daily temperature series for days 1-60 for Growing/Chilling Degree Days:
       mean_temp <- 0.5*(met_data$tmin_C[mask_31_60 | mask_1_30]+met_data$tmax_C[mask_31_60 | mask_1_30])
-      response_var_data$GDD_from_0C_60days[ROW] <- 30*mean(mean_temp[mean_temp>0], na.rm=TRUE)
+      response_var_data$GDD_from_0C_60days[ROW] <- 30*mean(mean_temp[mean_temp>0], na.rm=TRUE)      
       response_var_data$CDD_from_0C_60days[ROW] <- 30*mean(mean_temp[mean_temp<0], na.rm=TRUE)
       response_var_data$GDD_from_10C_60days[ROW] <- 30*mean(mean_temp[mean_temp>10], na.rm=TRUE)
       response_var_data$CDD_from_10C_60days[ROW] <- 30*mean(mean_temp[mean_temp<10], na.rm=TRUE)
