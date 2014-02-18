@@ -55,7 +55,7 @@ points(unique_lon_lat[unique_distances<150 & unique_distances >= 100,],pch='.',c
 
 color_list <- c("lightslateblue","green4","maroon3")
 # Plot pheno-day versus a bunch of met variables:
-relevant_data <- master_plus_met[c(6,7,8,29,30:62)]
+relevant_data <- master_plus_met[c(6,7,8,26,29:63)] # BUT WE ALSO NEED YEAR AND SITE ID!!
 
 par(mar=c(5.1,8.1,4.1,2.1))
 plot(relevant_data$Latitude,relevant_data$pheno_day,ylab="Pheno Day",xlab="Latitude")
@@ -103,7 +103,18 @@ legend(x="bottomright",c("1-30 days","31-60 days","61-90 days"),
 
 
 # Run a few regressions
+regression1 <- lm(pheno_day ~ 
+                    Precip_total_1to30days + 
+#                    Latitude + 
+                    Tmin_mean_1to30days +
+                    Biome +
+                    pheno_method +
+                    photoperiod_mean_30days +
+                    GDD_from_10C_30days,       
+                  data = relevant_data)
 
+summary(regression1)
+plot(regression1)
 # Plot pheno-day vs. precip AND pheno-day versus expected pheno-day from precip-only linear effect
 # (4 plots: unregressed, 30, 60, 90)
 
