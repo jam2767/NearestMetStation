@@ -95,6 +95,9 @@ unique_phen_sites <- dat[loc.index,]                ## unique sites
 # Making a column to put chosen met station IDs in...
 unique_phen_sites$Met_Station_ID = as.character(NA)
 
+# Making a column to put chosen met station distance from phen site in...
+unique_phen_sites$Distance_km = NA
+
 # The data in unique_phen_sites is all factor/categorical data. Convert at least
 # lat/lon to numeric:
 
@@ -155,7 +158,7 @@ gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(ori
 # the minimum longitude is -802.33, and the minumum BEGIN.YR is 1763... suprising. Anyway...
 
 # Loop over stations -- everthing, man , 
-for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
+ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
   print(sprintf("Processing pheno site %i of %i...",ST,nrow(unique_phen_sites)))
   
   # latitude and longitude of the phenology site:
@@ -212,6 +215,7 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
     no_nearby_stns <- TRUE
     # Making a column to put chosen met station IDs in...
     unique_phen_sites$Met_Station_ID[ST] = "NoData"
+    unique_phen_sites$Distance_km[ST] = NA
   }
   
   count = 1
@@ -224,6 +228,7 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
     
     # Figure out whether gsod or ghcn:
     dataset <- as.character(nearby_data$dataset[1])
+    distance_met_to_pheno <- nearby_data$distance[1]
     
     # Deal with gsod and ghcn data seperately
     if(dataset=="gsod") {
@@ -249,6 +254,7 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
         
         BREAK = TRUE
         unique_phen_sites$Met_Station_ID[ST] = USAF_id
+        unique_phen_sites$Distance_km[ST] = distance_met_to_pheno
         
       }else{
         nearby_data <- nearby_data[-1,]
@@ -293,7 +299,9 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
         
         if (good_data){ # Station is good, exit the loop
           BREAK = TRUE
-          unique_phen_sites$Met_Station_ID[ST] = st_id          
+          unique_phen_sites$Met_Station_ID[ST] = st_id    
+          unique_phen_sites$Distance_km[ST] = distance_met_to_pheno
+          
         }else{
           # Otherwise, delete all rows with that ID (same station)
           nearby_data = subset(nearby_data,ghcn_id != st_id)
@@ -311,7 +319,8 @@ for(ST in 1:nrow(unique_phen_sites)){ # for 1:number of phenology sites
     if(nrow(nearby_data) == 0) {
       BREAK <- TRUE
       no_nearby_stns <- TRUE
-      unique_phen_sites$Met_Station_ID[ST] = "NoDATA"
+      unique_phen_sites$Met_Station_ID[ST] = "NoData"
+      unique_phen_sites$Distance_km[ST] = NA
     }
     
   }
