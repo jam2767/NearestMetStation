@@ -36,7 +36,7 @@ for (ROW in 1:nrow(unique_data)){
   unique_lat = as.numeric(unique_data$Latitude[ROW])
   unique_lon = as.numeric(unique_data$Longitude[ROW])
   
-  # Match the lat/lon values (might be som rounding errors, so give a tolerance)
+  # Match the lat/lon values (might be some rounding errors, so give a tolerance)
   matching_sites = ( abs(master_data$Latitude-unique_lat) < 0.01 & 
                        abs(master_data$Longitude-unique_lon) < 0.01 )
   
@@ -46,6 +46,9 @@ for (ROW in 1:nrow(unique_data)){
   
   # Put Met Station ID in master data frame
   master_data$Met_Station_ID[matching_sites] = as.character(unique_data$Met_Station_ID[ROW])
+  
+  # Put distance from met station to site:
+  master_data$Met_Station_Distance_km[matching_sites] = unique_data$Distance_km[ROW]
   
 }
 
@@ -290,5 +293,5 @@ response_var_data$CDD_from_10C_90days[CDD_NA_10C_90 &
 
 
 # Save new master plus met csv:
-
+write.csv(response_var_data, file="Master_Plus_Met.csv")
 
