@@ -141,7 +141,7 @@ for(ROW in 1:nrow(response_var_data)) {
   # Find met station ID
   met_stat_id = response_var_data$Met_Station_ID[ROW]  
   
-  has_met_lat_lon <- (met_stat_id != "NoDATA") & !is.na(met_stat_id)
+  has_met_lat_lon <- (met_stat_id != "NoData") & !is.na(met_stat_id)
   if ( has_met_lat_lon ) {
     # We have a met station within 2 degrees, and so can input data:
     
@@ -224,10 +224,70 @@ for(ROW in 1:nrow(response_var_data)) {
       # The 90-day photoperiod is the mean over all days 1-90
       response_var_data$photoperiod_mean_90days[ROW] <- mean(daylength(lat=response_var_data$Latitude[ROW],
                                                                        doy=as.Date(met_data$Date[mask_1_30 | mask_31_60 | mask_61_90])))
-      
+
     }  
   } # end if has_met_lat_lon  
 } # end for loop over ROW
+
+# Okay, finally, growing and chilling degree days should only be NA if there is no
+# temperature data for that data range. If the mean temperature is not NA, but
+# the GDD/CDD is NA, we should set GDD/CDD to zero instead of NA (this is just
+# an artifact of the method we use to calculate GDD/CDD -- a good method for
+# other reasons).
+# Fix NA GDD/CDD:
+no_mean_temp_data_1to30 <- is.na(response_var_data$Tmean_1to30days)
+no_mean_temp_data_31to60 <- is.na(response_var_data$Tmean_31to60days)
+no_mean_temp_data_61to90 <- is.na(response_var_data$Tmean_61to90days)
+
+GDD_NA_0C_30 <- is.na(response_var_data$GDD_from_0C_30days)
+CDD_NA_0C_30 <- is.na(response_var_data$CDD_from_0C_30days)
+GDD_NA_0C_60 <- is.na(response_var_data$GDD_from_0C_60days)
+CDD_NA_0C_60 <- is.na(response_var_data$CDD_from_0C_60days)
+GDD_NA_0C_90 <- is.na(response_var_data$GDD_from_0C_90days)
+CDD_NA_0C_90 <- is.na(response_var_data$CDD_from_0C_90days)
+
+GDD_NA_10C_30 <- is.na(response_var_data$GDD_from_10C_30days)
+CDD_NA_10C_30 <- is.na(response_var_data$CDD_from_10C_30days)
+GDD_NA_10C_60 <- is.na(response_var_data$GDD_from_10C_60days)
+CDD_NA_10C_60 <- is.na(response_var_data$CDD_from_10C_60days)
+GDD_NA_10C_90 <- is.na(response_var_data$GDD_from_10C_90days)
+CDD_NA_10C_90 <- is.na(response_var_data$CDD_from_10C_90days)
+
+response_var_data$GDD_from_0C_30days[GDD_NA_0C_30 & !no_mean_temp_data_1to30] <- 0
+response_var_data$GDD_from_10C_30days[GDD_NA_10C_30 & !no_mean_temp_data_1to30] <- 0
+
+response_var_data$CDD_from_0C_30days[CDD_NA_0C_30 & !no_mean_temp_data_1to30] <- 0
+response_var_data$CDD_from_10C_30days[CDD_NA_10C_30 & !no_mean_temp_data_1to30] <- 0
+
+response_var_data$GDD_from_0C_60days[GDD_NA_0C_60 & 
+                                       (!no_mean_temp_data_1to30 | !no_mean_temp_data_31to60)] <- 0
+response_var_data$GDD_from_10C_60days[GDD_NA_10C_60 & 
+                                       (!no_mean_temp_data_1to30 | !no_mean_temp_data_31to60)] <- 0
+
+response_var_data$CDD_from_0C_60days[CDD_NA_0C_60 & 
+                                       (!no_mean_temp_data_1to30 | !no_mean_temp_data_31to60)] <- 0
+response_var_data$CDD_from_10C_60days[CDD_NA_10C_60 & 
+                                       (!no_mean_temp_data_1to30 | !no_mean_temp_data_31to60)] <- 0
+
+
+response_var_data$GDD_from_0C_90days[GDD_NA_0C_90 & 
+                                       (!no_mean_temp_data_1to30 | 
+                                          !no_mean_temp_data_31to60 |
+                                          !no_mean_temp_data_61to90)] <- 0
+response_var_data$GDD_from_10C_90days[GDD_NA_10C_90 & 
+                                       (!no_mean_temp_data_1to30 | 
+                                          !no_mean_temp_data_31to60 |
+                                          !no_mean_temp_data_61to90)] <- 0
+
+response_var_data$CDD_from_0C_90days[CDD_NA_0C_90 & 
+                                       (!no_mean_temp_data_1to30 | 
+                                          !no_mean_temp_data_31to60 |
+                                          !no_mean_temp_data_61to90)] <- 0
+response_var_data$CDD_from_10C_90days[CDD_NA_10C_90 & 
+                                       (!no_mean_temp_data_1to30 | 
+                                          !no_mean_temp_data_31to60 |
+                                          !no_mean_temp_data_61to90)] <- 0
+
 
 # Save new master plus met csv:
 
