@@ -223,7 +223,7 @@ gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(ori
   
   while(!BREAK){
     
-    print(sprintf("Trying %i of while loop",count))
+    print(sprintf("Checking met station %i for pheno site %i...",count,ST))
     count = count+1
     
     # Figure out whether gsod or ghcn:
@@ -248,6 +248,7 @@ gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(ori
       # But if the station is on our list of bad stations, then it's not good:
       if (any((WBAN_id == bad_station_ids) | (USAF_id == bad_station_ids))) {
         good_data = FALSE
+        print("Station is on our list of stations with bad data quality.")
       }
       
       if (good_data){
@@ -258,6 +259,7 @@ gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(ori
         
       }else{
         nearby_data <- nearby_data[-1,]
+        print("Met station does not meet requirements. Skipping.")
       }
     }else{ # GHCN
       st_id <- nearby_data$ghcn_id[1]
@@ -295,6 +297,7 @@ gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(ori
         # But if the station is on our list of bad stations, then it's not good:
         if (any(st_id == bad_station_ids)) {
           good_data = FALSE
+          print("Station is on our list of stations with bad data quality.")
         }
         
         if (good_data){ # Station is good, exit the loop
@@ -305,6 +308,7 @@ gsod_ghcn_data <- transform(gsod_ghcn_data, orig.row.num = as.integer(levels(ori
         }else{
           # Otherwise, delete all rows with that ID (same station)
           nearby_data = subset(nearby_data,ghcn_id != st_id)
+          print("Met station does not meet requirements. Skipping.")
         }
         
         
